@@ -5,6 +5,30 @@ class Player {
     constructor() {
         this.name = generateName();
         this.skills = generateSkills();
+        this.stats = {
+            tries: 0, // Attempts at offense
+            shoots: 0, // Offense successes
+            bumps: 0, // Low grade offensive successes
+            smashes: 0, // High grade offensive successes
+            tumbles: 0, // Offense failures
+            bids: 0, // Attempts at defense
+            sinks: 0, // Defensive successes
+            shootsAllowed: 0,
+            bumpsAllowed: 0,
+            smashesAllowed: 0,
+            pointsScored: 0,
+            pointsAllowed: 0,
+            games: 0,
+            gamesWon: 0,
+            gamesLost: 0
+        }
+    }
+}
+
+class Matchup {
+    constructor(player1, player2) {
+        this.player1 = player1;
+        this.player2 = player2;
     }
 }
 
@@ -51,13 +75,17 @@ function generateSkills() {
 }
 
 var test = $('#test');
+var games = $('#games');
+var button = $('#go');
+button.on('click', doGames);
 var list = $('<ol>');
 var players = [];
 for(var i = 0; i < 200; i++) {
     const newPlayer = new Player();
     players.push(newPlayer);
 }
-players.sort(function(a, b){return a.skills.total - b.skills.total});
+
+const sortedPlayers = players.sort(function(a, b){return a.skills.total - b.skills.total});
 players.forEach(player => {
     var item = $('<li>');
     item.text(player.name + " (" + player.skills.total + ") Rate: " + player.skills.rate + " Heat: " + player.skills.heat + " Control: " + player.skills.control + " Durability: " + player.skills.durability);
@@ -66,6 +94,128 @@ players.forEach(player => {
 
 test.append(list);
 
+function shuffleArray(array) {
+    array = array.map((x) => x);
+    for (var i = 0; i < array.length; ++i) {
+        var randIndex = Math.floor(Math.random() * array.length);
+        var temp = array[i];
+        array[i] = array[randIndex];
+        array[randIndex] = temp;
+    }
+    return array;
+}
 
+function doGames() {
+    games.empty();
+    playersCopy = shuffleArray(players);
 
+    // firstHalfPlayers = players.slice(0, players.length / 2);
+    var matchups = [];
 
+    while (playersCopy.length > 1) {
+        var randIndex = Math.floor(Math.random() * playersCopy.length);
+        var firstPlayer = playersCopy.splice(randIndex, 1).pop();
+        randIndex = Math.floor(Math.random() * playersCopy.length);
+        var secondPlayer = playersCopy.splice(randIndex, 1).pop();
+        var newMatchup = new Matchup(firstPlayer, secondPlayer);
+        matchups.push(newMatchup);
+    }
+
+    var gameList = $('<ol>');
+
+    matchups.forEach(matchup => {
+        matchup.player1.stats.games += 1;
+        matchup.player2.stats.games += 1;
+        var player1Points = 0;
+        var player2Points = 0;
+        var frame = 0;
+        // Play game
+        while (frame < 10) {
+            // Player 1 on Offense
+            matchup.player1.stats.tries += 1;
+            matchup.player2.stats.bids += 1;
+            var player1Rate = matchup.player1.skills.rate;
+            var player2Control = matchup.player2.skills.control;
+            var player1Try = Math.floor(Math.random() * player1Rate);
+            var player2Bid = Math.floor(Math.random() * player2Control);
+            var resultInShoot = player1Try > player2Bid;
+            if (resultInShoot) {
+                matchup.player1.stats.shoots += 1;
+                matchup.player2.stats.shootsAllowed += 1;
+                var player1Heat = matchup.player1.skills.heat;
+                var player2Durability = matchup.player2.skills.durability;
+                var player1Stretch = Math.floor(Math.random() * player1Heat);
+                var player2Stretch = Math.floor(Math.random() * player2Durability);
+                var resultInStretch = player1Stretch > player2Stretch;
+                if (resultInStretch) {
+                    matchup.player1.stats.smashes += 1;
+                    matchup.player2.stats.smashesAllowed += 1;
+                    var pointsToAdd = (Math.floor(Math.random() * 4) + 2);
+                    player1Points += pointsToAdd;
+                    matchup.player1.stats.pointsScored += pointsToAdd;
+                    matchup.player2.stats.pointsAllowed += pointsToAdd;
+                } else {
+                    matchup.player1.stats.bumps += 1;
+                    matchup.player2.stats.bumpsAllowed += 1;
+                    player1Points++;
+                    matchup.player1.stats.pointsScored++;
+                    matchup.player2.stats.pointsAllowed++;
+                }
+            } else {
+                matchup.player1.stats.tumbles += 1;
+                matchup.player2.stats.sinks += 1;
+            }
+
+            // Player 2 on Offense
+            matchup.player2.stats.tries += 1;
+            matchup.player1.stats.bids += 1;
+            var player2Rate = matchup.player2.skills.rate;
+            var player1Control = matchup.player1.skills.control;
+            var player2Try = Math.floor(Math.random() * player2Rate);
+            var player1Bid = Math.floor(Math.random() * player1Control);
+            var resultInShoot = player2Try > player1Bid;
+            if (resultInShoot) {
+                matchup.player2.stats.shoots += 1;
+                matchup.player1.stats.shootsAllowed += 1;
+                var player2Heat = matchup.player2.skills.heat;
+                var player1Durability = matchup.player1.skills.durability;
+                var player2Stretch = Math.floor(Math.random() * player2Heat);
+                var player1Stretch = Math.floor(Math.random() * player1Durability);
+                var resultInStretch = player2Stretch > player1Stretch;
+                if (resultInStretch) {
+                    matchup.player2.stats.smashes += 1;
+                    matchup.player1.stats.smashesAllowed += 1;
+                    var pointsToAdd = (Math.floor(Math.random() * 4) + 2);
+                    player2Points += pointsToAdd;
+                    matchup.player2.stats.pointsScored += pointsToAdd;
+                    matchup.player1.stats.pointsAllowed+= pointsToAdd;
+                } else {
+                    matchup.player2.stats.bumps += 1;
+                    matchup.player1.stats.bumpsAllowed += 1;
+                    player2Points++;
+                    matchup.player2.stats.pointsScored++;
+                    matchup.player1.stats.pointsAllowed++;
+                }
+            } else {
+                matchup.player2.stats.tumbles += 1;
+                matchup.player1.stats.sinks += 1;
+            }
+            frame++;
+        }
+
+        // Game results
+        if (player1Points > player2Points) {
+            matchup.player1.stats.gamesWon += 1;
+            matchup.player2.stats.gamesLost += 1;
+        } else if (player2Points > player1Points) {
+            matchup.player2.stats.gamesWon += 1;
+            matchup.player1.stats.gamesLost += 1;
+        }
+        gameScore = matchup.player1.name + ": " + player1Points + "  -  " + matchup.player2.name + ": " + player2Points;
+        var item = $('<li>');
+        item.text(gameScore);
+        gameList.append(item);
+    });
+
+    games.append(gameList);
+}
