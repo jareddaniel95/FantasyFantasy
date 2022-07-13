@@ -31,6 +31,22 @@ class Team {
     constructor(city, name) {
         this.name = city + ' ' + name;
         this.players = [];
+        this.schedule = [];
+        this.gameIndex = 0;
+    }
+}
+
+class Arena {
+    constructor(index) {
+        this.name = "Arena" + index;
+        this.matchups = [];
+    }
+}
+
+class TeamMatchup {
+    constructor(team1, team2) {
+        this.team1 = team1;
+        this.team2 = team2;
     }
 }
 
@@ -88,6 +104,8 @@ var games = $('#games');
 var button = $('#go');
 button.on('click', doGames);
 var list = $('<ol>');
+
+//SET UP PLAYERS
 var players = [];
 for(var i = 0; i < 300; i++) {
     const newPlayer = new Player();
@@ -102,6 +120,7 @@ const sortedPlayers = players.sort(function(a, b){return a.skills.total - b.skil
 // });
 // test.append(list);
 
+// SET UP TEAMS
 var teams = [];
 for(var i = 0; i < 30; i++) {
     var cityIndex = Math.floor(Math.random() * cities.length); // clone array first when moving this to function
@@ -133,6 +152,59 @@ teams.forEach(team => {
     list.append(item);
 });
 test.append(list);
+
+// SET UP SCHEDULE
+
+var arenas = [];
+for(var i = 0; i < teams.length / 2; i++) {
+    var newArena = new Arena(i);
+    arenas.push(newArena);
+}
+
+for(var j = 0; j < 5; j++) {
+    for(var i = 0; i < teams.length - 1; i++) {
+        assignMatchups();
+        teams.push(teams.shift());
+    }
+}
+
+function assignMatchups() {
+    arenas[0].matchups.push(new TeamMatchup(teams[0], teams[1]));
+    arenas[1].matchups.push(new TeamMatchup(teams[2], teams[3]));
+    arenas[2].matchups.push(new TeamMatchup(teams[4], teams[5]));
+    arenas[3].matchups.push(new TeamMatchup(teams[6], teams[7]));
+    arenas[4].matchups.push(new TeamMatchup(teams[8], teams[9]));
+    arenas[5].matchups.push(new TeamMatchup(teams[10], teams[11]));
+    arenas[6].matchups.push(new TeamMatchup(teams[12], teams[13]));
+    arenas[7].matchups.push(new TeamMatchup(teams[14], teams[15]));
+    arenas[8].matchups.push(new TeamMatchup(teams[16], teams[17]));
+    arenas[9].matchups.push(new TeamMatchup(teams[18], teams[19]));
+    arenas[10].matchups.push(new TeamMatchup(teams[20], teams[21]));
+    arenas[11].matchups.push(new TeamMatchup(teams[22], teams[23]));
+    arenas[12].matchups.push(new TeamMatchup(teams[24], teams[25]));
+    arenas[13].matchups.push(new TeamMatchup(teams[26], teams[27]));
+    arenas[14].matchups.push(new TeamMatchup(teams[28], teams[29]));
+}
+
+var ol = $('<ol>');
+for(var i = 0; i < arenas[0].matchups.length; i++) {
+    var li = $('<li>')
+    li.text("Day " + (i + 1));
+    var ul = $('<ul>');
+    for(var j = 0; j < arenas.length; j++) {
+        var m = $('<li>');
+        m.text(arenas[j].matchups[i].team1.name + " - " + arenas[j].matchups[i].team2.name);
+        ul.append(m);
+    }
+    li.append(ul);
+    ol.append(li);
+}
+test.append(ol);
+
+function nextTeam(index, jump) {
+    return index + jump >= teams.length? index + jump - teams.length : index + jump;
+}
+
 function shuffleArray(array) {
     array = array.map((x) => x);
     for (var i = 0; i < array.length; ++i) {
@@ -148,7 +220,6 @@ function doGames() {
     games.empty();
     playersCopy = shuffleArray(players);
 
-    // firstHalfPlayers = players.slice(0, players.length / 2);
     var matchups = [];
 
     while (playersCopy.length > 1) {
