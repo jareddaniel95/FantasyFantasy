@@ -145,14 +145,14 @@ function generateSkills() {
     }
 
     const offenseSplit = Math.floor(Math.random() * (offenseSkill / 2)) + (offenseSkill / 4);
-    var rate = max(offenseSkill - offenseSplit, 1);
+    var rate = Math.max(offenseSkill - offenseSplit, 1);
     if(Math.random() > 0.9) {
         let statIncrease = Math.floor(Math.random() * 10000);
         rate += statIncrease;
         totalSkill += statIncrease;
         testRandom++;
     }
-    var heat = max(offenseSkill - rate, 1);
+    var heat = Math.max(offenseSkill - rate, 1);
     if(Math.random() > 0.9) {
         let statIncrease = Math.floor(Math.random() * 10000);
         heat += statIncrease;
@@ -161,14 +161,14 @@ function generateSkills() {
     }
 
     const defenseSplit = Math.floor(Math.random() * (defenseSkill / 2)) + (defenseSkill / 4);
-    var control = max(defenseSkill - defenseSplit, 1);
+    var control = Math.max(defenseSkill - defenseSplit, 1);
     if(Math.random() > 0.9) {
         let statIncrease = Math.floor(Math.random() * 10000);
         control += statIncrease;
         totalSkill += statIncrease;
         testRandom++;
     }
-    var durability = max(defenseSkill - control, 1);
+    var durability = Math.max(defenseSkill - control, 1);
     if(Math.random() > 0.9) {
         let statIncrease = Math.floor(Math.random() * 10000);
         durability += statIncrease;
@@ -200,6 +200,7 @@ function generateSkills() {
         control: control,
         durability: durability,
         specialty: specialty,
+        adaptability: adaptability,
         endurance: endurance,
         dominance: dominance,
         offset: offset,
@@ -481,7 +482,7 @@ function doTry(defender, attacker) {
         var chanceofShoot = ((attacker.skills.rate * (1.9 - ((defender.skills.dominance / 10000) / Math.max(attacker.skills.offset / 1000, 1)))) / (attacker.skills.rate + (defender.skills.control * 2))) / 2;
     } else if (advantage == "attacker") {
         // var chanceofShoot = ((attacker.skills.rate * 2) / (attacker.skills.rate + (defender.skills.control * 1.6))) / 2;
-        var chanceofShoot = ((attacker.skills.rate * 2) / (attacker.skills.rate + (defender.skills.control * (1.6 - ((attacker.skills.dominance / 10000) / max(defender.skills.offset / 1000, 1)))))) / 2;
+        var chanceofShoot = ((attacker.skills.rate * 2) / (attacker.skills.rate + (defender.skills.control * (1.6 - ((attacker.skills.dominance / 10000) / Math.max(defender.skills.offset / 1000, 1)))))) / 2;
     } else {
         var chanceofShoot = ((attacker.skills.rate * 2) / (attacker.skills.rate + (defender.skills.control * 2))) / 2;
     }
@@ -510,7 +511,7 @@ function doTry(defender, attacker) {
             var chanceofStretch = ((attacker.skills.heat * (1.9 - ((defender.skills.dominance / 10000) / Math.max(attacker.skills.offset / 1000, 1)))) / (attacker.skills.heat + (defender.skills.durability * 2))) / 2;
         } else if (advantage == "attacker") {
             // var chanceofStretch = ((attacker.skills.heat * 2) / (attacker.skills.heat + (defender.skills.durability * 1.6))) / 2;
-            var chanceofStretch = ((attacker.skills.heat * 2) / (attacker.skills.heat + (defender.skills.durability * (1.6 - ((attacker.skills.dominance / 10000) / max(defender.skills.offset / 1000, 1)))))) / 2;
+            var chanceofStretch = ((attacker.skills.heat * 2) / (attacker.skills.heat + (defender.skills.durability * (1.6 - ((attacker.skills.dominance / 10000) / Math.max(defender.skills.offset / 1000, 1)))))) / 2;
         } else {
             var chanceofStretch = ((attacker.skills.heat * 2) / (attacker.skills.heat + (defender.skills.durability * 2))) / 2;
         }
