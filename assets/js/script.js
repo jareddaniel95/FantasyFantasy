@@ -120,13 +120,14 @@ class Assister {
 function generateName() {
     return firstNames[Math.floor(Math.random() * firstNames.length)] + " " + lastNames[Math.floor(Math.random() * lastNames.length)];
 }
-
+var testRandom = 0;
 function generateSkills() {
     var totalSkill = Math.floor(Math.random() * 20000) + 90000;
     if(Math.random() > 0.9) {
-        totalSkill += Math.floor(Math.random() * 20000)
+        totalSkill += Math.floor(Math.random() * 20000);
+        testRandom++;
     }
-    const split = Math.floor(Math.random() * (totalSkill / 2)) + 25000;
+    const split = Math.floor(Math.random() * (totalSkill / 2)) + (totalSkill / 4);
     var offenseSkill = totalSkill - split;
     var defenseSkill = totalSkill - offenseSkill;
 
@@ -134,24 +135,61 @@ function generateSkills() {
         let statIncrease = Math.floor(Math.random() * 10000);
         offenseSkill += statIncrease;
         totalSkill += statIncrease;
+        testRandom++;
     }
     if(Math.random() > 0.9) {
         let statIncrease = Math.floor(Math.random() * 10000);
         defenseSkill += statIncrease;
         totalSkill += statIncrease;
+        testRandom++;
     }
 
     const offenseSplit = Math.floor(Math.random() * (offenseSkill / 2)) + (offenseSkill / 4);
-    const rate = offenseSkill - offenseSplit;
-    const heat = offenseSkill - rate;
+    var rate = max(offenseSkill - offenseSplit, 1);
+    if(Math.random() > 0.9) {
+        let statIncrease = Math.floor(Math.random() * 10000);
+        rate += statIncrease;
+        totalSkill += statIncrease;
+        testRandom++;
+    }
+    var heat = max(offenseSkill - rate, 1);
+    if(Math.random() > 0.9) {
+        let statIncrease = Math.floor(Math.random() * 10000);
+        heat += statIncrease;
+        totalSkill += statIncrease;
+        testRandom++;
+    }
 
     const defenseSplit = Math.floor(Math.random() * (defenseSkill / 2)) + (defenseSkill / 4);
-    const control = defenseSkill - defenseSplit;
-    const durability = defenseSkill - control;
+    var control = max(defenseSkill - defenseSplit, 1);
+    if(Math.random() > 0.9) {
+        let statIncrease = Math.floor(Math.random() * 10000);
+        control += statIncrease;
+        totalSkill += statIncrease;
+        testRandom++;
+    }
+    var durability = max(defenseSkill - control, 1);
+    if(Math.random() > 0.9) {
+        let statIncrease = Math.floor(Math.random() * 10000);
+        durability += statIncrease;
+        totalSkill += statIncrease;
+        testRandom++;
+    }
 
     const specialty = Math.floor(Math.random() * 6000);
-    const counterplay = 6000 - specialty;
+    const counterplay = 8000 - specialty;
+
+    const adaptability = 3000 + Math.floor(Math.random() * 7000);
+
+    const endurance = 3000 + Math.floor(Math.random() * 7000);
+
+    const dominance = Math.floor(Math.random() * 10000);;
+    const offset = 10000 - dominance;
+
+    totalSkill += specialty + counterplay + adaptability + endurance + dominance + offset;
+
     const type = Math.floor(Math.random() * 3);
+
     return {
         total: totalSkill,
         offense: offenseSkill + counterplay,
@@ -162,6 +200,9 @@ function generateSkills() {
         control: control,
         durability: durability,
         specialty: specialty,
+        endurance: endurance,
+        dominance: dominance,
+        offset: offset,
         type: type
     }
 }
@@ -436,14 +477,13 @@ function doTry(defender, attacker) {
     //var player2Control = matchup.player2.skills.control;
     var advantage = checkAdvantage(defender, attacker);
     if (advantage == "defender") {
-        var chanceofShoot = ((attacker.skills.rate * 1.7) / (attacker.skills.rate + (defender.skills.control * 2))) / 2;
-        // var shootTry = Math.random() < (((attacker.skills.rate * 1.7) / (attacker.skills.rate + (defender.skills.control * 2))) / 2);
+        // var chanceofShoot = ((attacker.skills.rate * 1.7) / (attacker.skills.rate + (defender.skills.control * 2))) / 2;
+        var chanceofShoot = ((attacker.skills.rate * (1.9 - ((defender.skills.dominance / 10000) / Math.max(attacker.skills.offset / 1000, 1)))) / (attacker.skills.rate + (defender.skills.control * 2))) / 2;
     } else if (advantage == "attacker") {
-        var chanceofShoot = ((attacker.skills.rate * 2) / (attacker.skills.rate + (defender.skills.control * 1.6))) / 2;
-        // var shootTry = Math.random() < (((attacker.skills.rate * 2) / (attacker.skills.rate + (defender.skills.control * 1.6))) / 2);
+        // var chanceofShoot = ((attacker.skills.rate * 2) / (attacker.skills.rate + (defender.skills.control * 1.6))) / 2;
+        var chanceofShoot = ((attacker.skills.rate * 2) / (attacker.skills.rate + (defender.skills.control * (1.6 - ((attacker.skills.dominance / 10000) / max(defender.skills.offset / 1000, 1)))))) / 2;
     } else {
         var chanceofShoot = ((attacker.skills.rate * 2) / (attacker.skills.rate + (defender.skills.control * 2))) / 2;
-        // var shootTry = Math.random() < (((attacker.skills.rate * 2) / (attacker.skills.rate + (defender.skills.control * 2))) / 2);
     }
     var shootRoll = Math.random();
     var shootTry = shootRoll < chanceofShoot;
@@ -466,14 +506,13 @@ function doTry(defender, attacker) {
         attacker.stats.shoots += 1;
         defender.stats.shootsAllowed += 1;
         if (advantage == "defender") {
-            var chanceofStretch = ((attacker.skills.heat * 1.7) / (attacker.skills.heat + (defender.skills.durability * 2))) / 2;
-            // var stretchTry = Math.random() < (((attacker.skills.heat * 1.7) / (attacker.skills.heat + (defender.skills.durability * 2))) / 2);
+            // var chanceofStretch = ((attacker.skills.heat * 1.7) / (attacker.skills.heat + (defender.skills.durability * 2))) / 2;
+            var chanceofStretch = ((attacker.skills.heat * (1.9 - ((defender.skills.dominance / 10000) / Math.max(attacker.skills.offset / 1000, 1)))) / (attacker.skills.heat + (defender.skills.durability * 2))) / 2;
         } else if (advantage == "attacker") {
-            var chanceofStretch = ((attacker.skills.heat * 2) / (attacker.skills.heat + (defender.skills.durability * 1.6))) / 2;
-            // var stretchTry = Math.random() < (((attacker.skills.heat * 2) / (attacker.skills.heat + (defender.skills.durability * 1.6))) / 2);
+            // var chanceofStretch = ((attacker.skills.heat * 2) / (attacker.skills.heat + (defender.skills.durability * 1.6))) / 2;
+            var chanceofStretch = ((attacker.skills.heat * 2) / (attacker.skills.heat + (defender.skills.durability * (1.6 - ((attacker.skills.dominance / 10000) / max(defender.skills.offset / 1000, 1)))))) / 2;
         } else {
             var chanceofStretch = ((attacker.skills.heat * 2) / (attacker.skills.heat + (defender.skills.durability * 2))) / 2;
-            // var stretchTry = Math.random() < (((attacker.skills.heat * 2) / (attacker.skills.heat + (defender.skills.durability * 2))) / 2);
         }
         var stretchRoll = Math.random();
         var stretchTry = stretchRoll < chanceofStretch;
@@ -516,119 +555,5 @@ function checkAdvantage(defender, attacker) {
     } else if (defender.skills.type == 2) {
         return attacker.skills.type == 0 ? "defender" : attacker.skills.type == 1 ? "attacker" : null;
     }
-    // return defender.skills.type == 0 && attacker.skills.type == 1 ? defender : 
+    return null;
 }
-
-// function doGames() {
-//     games.empty();
-//     playersCopy = shuffleArray(players);
-
-//     var matchups = [];
-
-//     while (playersCopy.length > 1) {
-//         var randIndex = Math.floor(Math.random() * playersCopy.length);
-//         var firstPlayer = playersCopy.splice(randIndex, 1).pop();
-//         randIndex = Math.floor(Math.random() * playersCopy.length);
-//         var secondPlayer = playersCopy.splice(randIndex, 1).pop();
-//         var newMatchup = new Matchup(firstPlayer, secondPlayer);
-//         matchups.push(newMatchup);
-//     }
-
-//     var gameList = $('<ol>');
-
-//     matchups.forEach(matchup => {
-//         matchup.player1.stats.games += 1;
-//         matchup.player2.stats.games += 1;
-//         var player1Points = 0;
-//         var player2Points = 0;
-//         var frame = 0;
-//         // Play game
-//         while (frame < 10) {
-//             // Player 1 on Offense
-//             matchup.player1.stats.tries += 1;
-//             matchup.player2.stats.bids += 1;
-//             var player1Rate = matchup.player1.skills.rate;
-//             var player2Control = matchup.player2.skills.control;
-//             var player1Try = Math.floor(Math.random() * player1Rate);
-//             var player2Bid = Math.floor(Math.random() * player2Control);
-//             var resultInShoot = player1Try > player2Bid;
-//             if (resultInShoot) {
-//                 matchup.player1.stats.shoots += 1;
-//                 matchup.player2.stats.shootsAllowed += 1;
-//                 var player1Heat = matchup.player1.skills.heat;
-//                 var player2Durability = matchup.player2.skills.durability;
-//                 var player1Stretch = Math.floor(Math.random() * player1Heat);
-//                 var player2Stretch = Math.floor(Math.random() * player2Durability);
-//                 var resultInStretch = player1Stretch > player2Stretch;
-//                 if (resultInStretch) {
-//                     matchup.player1.stats.smashes += 1;
-//                     matchup.player2.stats.smashesAllowed += 1;
-//                     var pointsToAdd = (Math.floor(Math.random() * 4) + 2);
-//                     player1Points += pointsToAdd;
-//                     matchup.player1.stats.pointsScored += pointsToAdd;
-//                     matchup.player2.stats.pointsAllowed += pointsToAdd;
-//                 } else {
-//                     matchup.player1.stats.bumps += 1;
-//                     matchup.player2.stats.bumpsAllowed += 1;
-//                     player1Points++;
-//                     matchup.player1.stats.pointsScored++;
-//                     matchup.player2.stats.pointsAllowed++;
-//                 }
-//             } else {
-//                 matchup.player1.stats.tumbles += 1;
-//                 matchup.player2.stats.sinks += 1;
-//             }
-
-//             // Player 2 on Offense
-//             matchup.player2.stats.tries += 1;
-//             matchup.player1.stats.bids += 1;
-//             var player2Rate = matchup.player2.skills.rate;
-//             var player1Control = matchup.player1.skills.control;
-//             var player2Try = Math.floor(Math.random() * player2Rate);
-//             var player1Bid = Math.floor(Math.random() * player1Control);
-//             var resultInShoot = player2Try > player1Bid;
-//             if (resultInShoot) {
-//                 matchup.player2.stats.shoots += 1;
-//                 matchup.player1.stats.shootsAllowed += 1;
-//                 var player2Heat = matchup.player2.skills.heat;
-//                 var player1Durability = matchup.player1.skills.durability;
-//                 var player2Stretch = Math.floor(Math.random() * player2Heat);
-//                 var player1Stretch = Math.floor(Math.random() * player1Durability);
-//                 var resultInStretch = player2Stretch > player1Stretch;
-//                 if (resultInStretch) {
-//                     matchup.player2.stats.smashes += 1;
-//                     matchup.player1.stats.smashesAllowed += 1;
-//                     var pointsToAdd = (Math.floor(Math.random() * 4) + 2);
-//                     player2Points += pointsToAdd;
-//                     matchup.player2.stats.pointsScored += pointsToAdd;
-//                     matchup.player1.stats.pointsAllowed+= pointsToAdd;
-//                 } else {
-//                     matchup.player2.stats.bumps += 1;
-//                     matchup.player1.stats.bumpsAllowed += 1;
-//                     player2Points++;
-//                     matchup.player2.stats.pointsScored++;
-//                     matchup.player1.stats.pointsAllowed++;
-//                 }
-//             } else {
-//                 matchup.player2.stats.tumbles += 1;
-//                 matchup.player1.stats.sinks += 1;
-//             }
-//             frame++;
-//         }
-
-//         // Game results
-//         if (player1Points > player2Points) {
-//             matchup.player1.stats.gamesWon += 1;
-//             matchup.player2.stats.gamesLost += 1;
-//         } else if (player2Points > player1Points) {
-//             matchup.player2.stats.gamesWon += 1;
-//             matchup.player1.stats.gamesLost += 1;
-//         }
-//         gameScore = matchup.player1.name + ": " + player1Points + "  -  " + matchup.player2.name + ": " + player2Points;
-//         var item = $('<li>');
-//         item.text(gameScore);
-//         gameList.append(item);
-//     });
-
-//     games.append(gameList);
-// }
