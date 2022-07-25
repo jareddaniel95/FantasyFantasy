@@ -3,6 +3,22 @@ const lastNames = ["Smith","Johnson","Williams","Brown","Jones","Miller","Davis"
 const teamNames = ["Marlins", "Nationals", "Bears", "Pirates", "Cardinals", "Giants", "Blue Jays", "Guardians", "Tigers", "Angels", "Mariners", "Rangers", "Bats", "Saints", "Bisons", "Red Wings", "Knights", "Bulls", "Tides", "Express", "Cowboys", "Aviators", "Aces", "River Cats", "Bees", "Sea Dogs", "Patriots", "Curve", "Senators", "Barons", "Surge", "Dragons", "Loons", "Captains", "Chiefs", "Bandits", "Timberwolves", "Emeralds", "Devils", "Cyclones", "Renegades", "Hot Rods", "Drive", "Grizzlies", "Storm", "Quakes", "Ducks", "Fireflies", "Pelicans", "Hammerheads", "Marauders", "Threshers", "Cougars", "Monarchs", "Canaries", "Revolution", "Hunters", "Jackals", "Titans", "Mustangs", "Riders", "Voyagers", "Hawks", "Raptors", "Rhinos", "Admirals", "Invaders", "Robbers", "Reserve", "Unicorns", "Mammoths", "Cavaliers", "Bucks", "Hornets", "Wizards", "Thunder", "Blazers", "Warriors", "Kings", "Mavericks", "Rockets", "Stingers", "Alliance", "Lions", "Stars", "Lightning", "Express", "Charge", "Crew", "Swarm", "Skyforce", "Squadron", "Vipers", "Legends", "Dream", "Wings", "Dolphins", "Jets", "Ravens", "Bengals", "Colts", "Jaguars", "Chargers", "Eagles", "Vikings", "Falcons", "Panthers", "Buccaneers", "Spartans", "Crushers", "Penguins", "Comets", "Owls", "Wolfpack", "Rebels", "Trojans"];
 const cities = ["New York", "Los Angeles", "Toronto", "Chicago", "Houston", "Montreal", "Philadelphia", "Phoenix", "San Diego", "Dallas", "San Jose", "Austin", "Edmonton", "Jacksonville", "San Francisco", "Indianapolis", "Columbus", "Fort Worth", "Charlotte", "Winnipeg", "Seattle", "El Paso", "Detroit", "Washington", "Boston", "Memphis", "Nashville", "Vancouver", "Portland", "Oklahoma", "Las Vegas", "Baltimore", "Louisville", "Brampton", "Milwaukee", "Albuquerque", "Hamilton", "Tucson", "Fresno", "Denver", "Atlanta", "Sacramento", "Kansas City", "Raleigh", "Miami", "Omaha", "Long Beach", "Virginia Beach", "Oakland", "Minnesota", "Tampa Bay", "Tulsa", "Arlington", "Wichita", "Bakersfield", "New Orleans", "Cleveland", "Lexington", "Cincinnati", "Pittsburgh", "Lincoln", "Orlando", "St. Louis", "Reno", "Buffalo", "Norfolk", "Richmond", "Boise", "Huntsville", "Arkansas", "Sioux City", "Mississippi", "Concord", "Newark", "Jersey City", "Savannah", "Fargo", "Rhode Island", "Charleston", "Rapid City", "Salt Lake City", "Burlington", "Madison", "Green Bay", "Wyoming"];
 
+let gameStatsTemplate = {
+    tries: 0,
+    shoots: 0,
+    bumps: 0,
+    smashes: 0,
+    tumbles: 0,
+    bids: 0,
+    sinks: 0,
+    shootsAllowed: 0,
+    bumpsAllowed: 0,
+    smashesAllowed: 0,
+    pointsScored: 0,
+    pointsAllowed: 0,
+    assists: 0
+};
+
 class Player {
     constructor(id) {
         this.id = id;
@@ -26,7 +42,8 @@ class Player {
             games: 0,
             wins: 0,
             losses: 0
-        }
+        };
+        this.gameStats = {...gameStatsTemplate};
         this.seasonStats = [];
     }
 }
@@ -52,7 +69,7 @@ class Team {
             tries: 0,
             bids: 0,
             assists: 0
-        }
+        };
         this.seasonStats = [];
         this.division = division;
         this.schedule = [];
@@ -63,6 +80,21 @@ class Division {
     constructor(name) {
         this.name = name;
         this.teams = [];
+    }
+}
+
+class BoxScore {
+    constructor(team1, team2) {
+        this.team1 = team1;
+        this.team2 = team2;
+        this.team1Rounds = [];
+        this.team2Rounds = [];
+        this.team1Score = 0;
+        this.team2Score = 0;
+        this.team1Shoots = 0;
+        this.team2Shoots = 0;
+        this.team1Smashes = 0;
+        this.team2Smashes = 0;
     }
 }
 
@@ -103,13 +135,14 @@ class TeamMatchup {
         this.team2 = team2;
         this.team1Score = 0;
         this.team2Score = 0;
-        this.frame = 0;
+        this.round = 0;
         this.team1Progress = 0;
         this.team2Progress = 0;
         this.team1Streak = 0;
         this.team2Streak = 0;
         this.team1Assisters = [];
         this.team2Assisters = [];
+        this.boxScore = null;
     }
 }
 
@@ -209,15 +242,15 @@ for(let i = 0; i < 300; i++) {
     players.push(newPlayer);
 }
 
-const sortedPlayers = players.sort(function(a, b){return a.skills.total - b.skills.total});
+// const sortedPlayers = players.sort(function(a, b){return a.skills.total - b.skills.total});
 
 // SET UP TEAMS
 let divisions = [
     new Division("Red"),
     new Division("Green"),
-    new Division("Blue"),
-    new Division("Yellow"),
     new Division("Purple"),
+    new Division("Yellow"),
+    new Division("Blue"),
     new Division("Pink")
 ];
 let teams = [];
@@ -232,11 +265,12 @@ for(let j = 0; j < 6; j++) {
         divisions[j].teams.push(newTeam);
     }
 }
-
+teams = shuffleArray(teams);
+let playersCopy = players.map((x) => x);
 for(let i = 0; i < 10; i++) {
     teams.forEach(team => {
-        if(players.length > 0) {
-            let player = players.pop();
+        if(playersCopy.length > 0) {
+            let player = playersCopy.pop();
             team.players.push(player);
             player.team = team;
         }
@@ -331,6 +365,32 @@ function shuffleArray(array) {
     }
     return array;
 }
+
+let standingsDiv = $('#standings');
+let standingsTable = $('#standings-table');
+function updateStandingsDiv() {
+    standingsTable.removeClass('hidden');
+
+    for (let i = 0; i < divisions.length; i++) {
+        let currTeams = [ ...divisions[i].teams ];
+        currTeams.sort(function(a, b){return (b.stats.wins * 0.5 - b.stats.losses * 0.5) - (a.stats.wins * 0.5 - a.stats.losses * 0.5)});
+        standingsTable.children('tbody').children('tr').children('td').eq(i).html(
+            `
+<h3>${divisions[i].name} Division</h3>
+<table class="table table-dark table-bordered"><tbody>
+<tr><td>${currTeams[0].name}</td> <td>${currTeams[0].stats.wins} - ${currTeams[0].stats.losses}</td></tr>
+<tr><td>${currTeams[1].name}</td> <td>${currTeams[1].stats.wins} - ${currTeams[1].stats.losses}</td></tr>
+<tr><td>${currTeams[2].name}</td> <td>${currTeams[2].stats.wins} - ${currTeams[2].stats.losses}</td></tr>
+<tr><td>${currTeams[3].name}</td> <td>${currTeams[3].stats.wins} - ${currTeams[3].stats.losses}</td></tr>
+<tr><td>${currTeams[4].name}</td> <td>${currTeams[4].stats.wins} - ${currTeams[4].stats.losses}</td></tr>
+</tbody></table>
+            `
+        );
+
+    }
+}
+
+
 let gameIndex = 0;
 let gameList = $('<ol>');
 function doGames() {
@@ -339,18 +399,26 @@ function doGames() {
         playGame(arena.matchups.at(gameIndex));
     });
     gameIndex++;
+    updateStandingsDiv();
 }
 
 function playGame(matchup) {
     matchup.team1.stats.games++;
     matchup.team2.stats.games++;
-    matchup.team1.players.forEach(player => {player.stats.games++});
-    matchup.team2.players.forEach(player => {player.stats.games++});
+    matchup.team1.players.forEach(player => {
+        player.stats.games++;
+        player.gameStats = {...gameStatsTemplate};
+    });
+    matchup.team2.players.forEach(player => {
+        player.stats.games++;
+        player.gameStats = {...gameStatsTemplate};
+    });
+    matchup.boxScore = new BoxScore(matchup.team1, matchup.team2);
     let team1DefenseOrder = shuffleArray(matchup.team1.players);
     let team2DefenseOrder = shuffleArray(matchup.team2.players);
     let team1DefenseBackup = team1DefenseOrder.map((x) => x);
     let team2DefenseBackup = team2DefenseOrder.map((x) => x);
-    while(matchup.frame < 10 || matchup.team1Score == matchup.team2Score) {
+    while(matchup.round < 10 || matchup.team1Score == matchup.team2Score) {
         //Team 2 on offense
         if (team1DefenseOrder.length <= 0) {
             team1DefenseOrder = team1DefenseBackup;
@@ -367,31 +435,36 @@ function playGame(matchup) {
             } else if (result == "bump") {
                 matchup.team2.stats.shoots++;
                 matchup.team2.stats.bumps++;
+                matchup.boxScore.team2Shoots++;
                 matchup.team1.stats.shootsAllowed++;
                 matchup.team1.stats.bumpsAllowed++;
                 matchup.team2Progress += (1 + matchup.team2Streak);
-                // matchup.team2Assisters.push(new Assister(player, 1 + matchup.team2Streak));
                 matchup.team2Assisters.push(player);
                 matchup.team2Streak++;
             } else if (result == "smash") {
                 matchup.team2.stats.shoots++;
                 matchup.team2.stats.smashes++;
+                matchup.boxScore.team2Shoots++;
+                matchup.boxScore.team2Smashes++;
                 matchup.team1.stats.shootsAllowed++;
                 matchup.team1.stats.smashesAllowed++;
                 matchup.team2Progress += (5 + matchup.team2Streak);
-                // matchup.team2Assisters.push(new Assister(player, 5 + matchup.team2Streak));
                 matchup.team2Assisters.push(player);
                 matchup.team2Streak++;
             }
             while (matchup.team2Progress >= 5) {
                 matchup.team2Score++;
+                matchup.boxScore.team2Score = matchup.team2Score;
+                matchup.boxScore.team2Rounds[matchup.round] = matchup.team2Score;
                 player.stats.pointsScored++;
+                player.gameStats.pointsScored++;
                 matchup.team2.stats.pointsScored++;
                 matchup.team1.stats.pointsAllowed++;
                 matchup.team2Progress -= 5;
                 matchup.team2Assisters.forEach(assister => {
                     if (assister != player) {
                         assister.stats.assists++;
+                        assister.gameStats.assists++;
                         matchup.team2.stats.assists++;
                     }
                 });
@@ -421,6 +494,7 @@ function playGame(matchup) {
             } else if (result == "bump") {
                 matchup.team1.stats.shoots++;
                 matchup.team1.stats.bumps++;
+                matchup.boxScore.team1Shoots++;
                 matchup.team2.stats.shootsAllowed++;
                 matchup.team2.stats.bumpsAllowed++;
                 matchup.team1Progress += (1 + matchup.team1Streak);
@@ -429,6 +503,8 @@ function playGame(matchup) {
             } else if (result == "smash") {
                 matchup.team1.stats.shoots++;
                 matchup.team1.stats.smashes++;
+                matchup.boxScore.team1Shoots++;
+                matchup.boxScore.team1Smashes++;
                 matchup.team2.stats.shootsAllowed++;
                 matchup.team2.stats.smashesAllowed++;
                 matchup.team1Progress += (5 + matchup.team1Streak);
@@ -437,13 +513,19 @@ function playGame(matchup) {
             }
             while (matchup.team1Progress >= 5) {
                 matchup.team1Score++;
+                matchup.boxScore.team1Score = matchup.team1Score;
+                matchup.boxScore.team1Rounds[matchup.round] = matchup.team1Score;
                 player.stats.pointsScored++;
+                player.gameStats.pointsScored++;
                 matchup.team1.stats.pointsScored++;
+                currentDefender.stats.pointsAllowed++;
+                currentDefender.gameStats.pointsAllowed++;
                 matchup.team2.stats.pointsAllowed++;
                 matchup.team1Progress -= 5;
                 matchup.team1Assisters.forEach(assister => {
                     if (assister != player) {
                         assister.stats.assists++;
+                        assister.gameStats.assists++;
                         matchup.team1.stats.assists++;
                     }
                 });
@@ -456,7 +538,7 @@ function playGame(matchup) {
         matchup.team1Progress = 0;
         matchup.team1Streak = 0;
         matchup.team1Assisters = [];
-        matchup.frame++;
+        matchup.round++;
     }
     if (matchup.team1Score > matchup.team2Score) {
         matchup.team1.players.forEach(player => {player.stats.wins++});
@@ -478,18 +560,19 @@ function playGame(matchup) {
 
 function doTry(defender, attacker) {
     defender.stats.bids += 1;
+    defender.gameStats.bids += 1;
     attacker.stats.tries += 1;
-    // let player1Rate = matchup.player1.skills.rate;
-    //let player2Control = matchup.player2.skills.control;
+    attacker.gameStats.tries += 1;
     let advantage = checkAdvantage(defender, attacker);
+    let chanceofShoot = 0;
     if (advantage == "defender") {
         // let chanceofShoot = ((attacker.skills.rate * 1.7) / (attacker.skills.rate + (defender.skills.control * 2))) / 2;
-        let chanceofShoot = ((attacker.skills.rate * (1.9 - ((defender.skills.dominance / 10000) / Math.max(attacker.skills.offset / 1000, 1)))) / (attacker.skills.rate + (defender.skills.control * 2))) / 2;
+        chanceofShoot = ((attacker.skills.rate * (1.9 - ((defender.skills.dominance / 10000) / Math.max(attacker.skills.offset / 1000, 1)))) / (attacker.skills.rate + (defender.skills.control * 2))) / 2;
     } else if (advantage == "attacker") {
         // let chanceofShoot = ((attacker.skills.rate * 2) / (attacker.skills.rate + (defender.skills.control * 1.6))) / 2;
-        let chanceofShoot = ((attacker.skills.rate * 2) / (attacker.skills.rate + (defender.skills.control * (1.6 - ((attacker.skills.dominance / 10000) / Math.max(defender.skills.offset / 1000, 1)))))) / 2;
+        chanceofShoot = ((attacker.skills.rate * 2) / (attacker.skills.rate + (defender.skills.control * (1.6 - ((attacker.skills.dominance / 10000) / Math.max(defender.skills.offset / 1000, 1)))))) / 2;
     } else {
-        let chanceofShoot = ((attacker.skills.rate * 2) / (attacker.skills.rate + (defender.skills.control * 2))) / 2;
+        chanceofShoot = ((attacker.skills.rate * 2) / (attacker.skills.rate + (defender.skills.control * 2))) / 2;
     }
     let shootRoll = Math.random();
     let shootTry = shootRoll < chanceofShoot;
@@ -510,15 +593,18 @@ function doTry(defender, attacker) {
     }
     if (shootTry) {
         attacker.stats.shoots += 1;
+        attacker.gameStats.shoots += 1;
         defender.stats.shootsAllowed += 1;
+        defender.gameStats.shootsAllowed += 1;
+        let chanceofStretch = 0;
         if (advantage == "defender") {
             // let chanceofStretch = ((attacker.skills.heat * 1.7) / (attacker.skills.heat + (defender.skills.durability * 2))) / 2;
-            let chanceofStretch = ((attacker.skills.heat * (1.9 - ((defender.skills.dominance / 10000) / Math.max(attacker.skills.offset / 1000, 1)))) / (attacker.skills.heat + (defender.skills.durability * 2))) / 2;
+            chanceofStretch = ((attacker.skills.heat * (1.9 - ((defender.skills.dominance / 10000) / Math.max(attacker.skills.offset / 1000, 1)))) / (attacker.skills.heat + (defender.skills.durability * 2))) / 2;
         } else if (advantage == "attacker") {
             // let chanceofStretch = ((attacker.skills.heat * 2) / (attacker.skills.heat + (defender.skills.durability * 1.6))) / 2;
-            let chanceofStretch = ((attacker.skills.heat * 2) / (attacker.skills.heat + (defender.skills.durability * (1.6 - ((attacker.skills.dominance / 10000) / Math.max(defender.skills.offset / 1000, 1)))))) / 2;
+            chanceofStretch = ((attacker.skills.heat * 2) / (attacker.skills.heat + (defender.skills.durability * (1.6 - ((attacker.skills.dominance / 10000) / Math.max(defender.skills.offset / 1000, 1)))))) / 2;
         } else {
-            let chanceofStretch = ((attacker.skills.heat * 2) / (attacker.skills.heat + (defender.skills.durability * 2))) / 2;
+            chanceofStretch = ((attacker.skills.heat * 2) / (attacker.skills.heat + (defender.skills.durability * 2))) / 2;
         }
         let stretchRoll = Math.random();
         let stretchTry = stretchRoll < chanceofStretch;
@@ -539,16 +625,22 @@ function doTry(defender, attacker) {
         }
         if (stretchTry) {
             attacker.stats.smashes += 1;
+            attacker.gameStats.smashes += 1;
             defender.stats.smashesAllowed += 1;
+            defender.gameStats.smashesAllowed += 1;
             return "smash";
         } else {
             attacker.stats.bumps += 1;
+            attacker.gameStats.bumps += 1;
             defender.stats.bumpsAllowed += 1;
+            defender.gameStats.bumpsAllowed += 1;
             return "bump";
         }
     } else {
         attacker.stats.tumbles += 1;
+        attacker.gameStats.tumbles += 1;
         defender.stats.sinks += 1;
+        defender.gameStats.sinks += 1;
         return "tumble";
     }
 }
@@ -560,6 +652,27 @@ function checkAdvantage(defender, attacker) {
         return attacker.skills.type == 2 ? "defender" : attacker.skills.type == 0 ? "attacker" : null;
     } else if (defender.skills.type == 2) {
         return attacker.skills.type == 0 ? "defender" : attacker.skills.type == 1 ? "attacker" : null;
+    }
+    return null;
+}
+
+function simulateSeason(interval) {
+    let totalGames = 0;
+    let timeInterval = setInterval(function() {
+        if (totalGames < 150) {
+            totalGames++;
+            doGames();
+        } else {
+            clearInterval(timeInterval);
+        }
+    }, interval * 1000);
+}
+
+function getPlayer(id) {
+    for (const player of players) {
+        if (player.id == id) {
+            return player;
+        }
     }
     return null;
 }

@@ -1,0 +1,31 @@
+.hidden {
+    display:none;
+}
+
+.table td {
+    text-align: center;
+}
+
+.RedDiv h3 {
+    color: red;
+}
+
+.GreenDiv h3 {
+    color: green;
+}
+
+.PurpleDiv h3 {
+    color: darkorchid;
+}
+
+.YellowDiv h3 {
+    color: yellow;
+}
+
+.BlueDiv h3 {
+    color: dodgerblue;
+}
+
+.PinkDiv h3 {
+    color: magenta;
+}
